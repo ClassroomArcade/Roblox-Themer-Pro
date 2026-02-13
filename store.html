@@ -41,78 +41,60 @@
   
   <div class="grid" id="storeGrid"></div>
 
-  <script>
-    const themes = [
-      { id: 'cyberpunk', name: 'Cyberpunk Red', color: '#ff0055', bg: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81' },
-      { id: 'modern_dark', name: 'Black Glass', color: '#1a1a1a', bg: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa' },
-      { id: 'ocean', name: 'Oceanic Blue', color: '#0077be', bg: 'https://images.unsplash.com/photo-1505118380757-91f5f45d8de4' }
-    ];
+<script>
+  const themes = [
+    { id: 'cyberpunk', name: 'Cyberpunk Red', color: '#ff0055', bg: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81' },
+    { id: 'modern_dark', name: 'Black Glass', color: '#1a1a1a', bg: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa' },
+    { id: 'ocean', name: 'Oceanic Blue', color: '#0077be', bg: 'https://images.unsplash.com/photo-1505118380757-91f5f45d8de4' },
+    { id: 'forest', name: 'Mystic Forest', color: '#2d5a27', bg: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e' }
+  ];
 
-    // Helper to render themes
-    function renderStore(ownedList) {
-      const grid = document.getElementById('storeGrid');
-      const bgLayer = document.getElementById('bgPreview');
-      grid.innerHTML = ''; // Clear previous content
+  const EXTENSION_ID = "YOUR_ACTUAL_EXTENSION_ID_HERE";
 
-      themes.forEach(t => {
-        const isOwned = ownedList.includes(t.id);
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `
-          <div class="preview-box" style="background:${t.color}"></div>
-          <h3>${t.name}</h3>
-          <button class="buy-btn" data-id="${t.id}" ${isOwned ? 'disabled' : ''}>
-            ${isOwned ? 'Claimed' : 'FREE'}
-          </button>
-        `;
+  function renderStore() {
+    const grid = document.getElementById('storeGrid');
+    const bgLayer = document.getElementById('bgPreview');
+    grid.innerHTML = '';
 
-        div.addEventListener('mouseenter', () => {
-          bgLayer.style.backgroundImage = `url('${t.bg}')`;
-          bgLayer.style.opacity = "0.6";
-          document.body.style.backgroundColor = t.color;
-        });
+    themes.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <div class="preview-box" style="background:${t.color}"></div>
+        <h3>${t.name}</h3>
+        <button class="buy-btn" data-id="${t.id}">FREE</button>
+      `;
 
-        div.addEventListener('mouseleave', () => {
-          bgLayer.style.opacity = "0.3";
-          document.body.style.backgroundColor = "#0b0e11";
-        });
-
-        grid.appendChild(div);
+      div.addEventListener('mouseenter', () => {
+        bgLayer.style.backgroundImage = `url('${t.bg}')`;
+        bgLayer.style.opacity = "0.6";
+        document.body.style.backgroundColor = t.color;
       });
-    }
 
-    // Check for Extension Storage
-    if (typeof chrome !== "undefined" && chrome.storage) {
-      chrome.storage.local.get(['ownedThemes'], (data) => {
-        renderStore(data.ownedThemes || ['cyberpunk']);
-      });
-    } else {
-      // If viewing on Netlify directly, just show all themes as available
-      renderStore(['cyberpunk']);
-      console.log("Running in Web Mode: Storage Unavailable");
-    }
-
-    // Handle Claims
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('buy-btn')) {
-        const id = e.target.dataset.id;
-        
-        if (typeof chrome !== "undefined" && chrome.storage) {
-          chrome.storage.local.get(['ownedThemes'], (data) => {
-            const owned = data.ownedThemes || ['cyberpunk'];
-            if (!owned.includes(id)) {
-              owned.push(id);
-              chrome.storage.local.set({ownedThemes: owned}, () => {
-                e.target.innerText = "Claimed";
-                e.target.disabled = true;
-              });
-            }
-          });
-        } else {
-          alert("Install the extension to 'buy' this theme!");
-        }
-      }
+      grid.appendChild(div);
     });
-  </script>
+  }
+
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('buy-btn')) {
+      const id = e.target.dataset.id;
+      
+      if (typeof chrome !== "undefined" && chrome.runtime) {
+        chrome.runtime.sendMessage(EXTENSION_ID, { action: "claimTheme", id: id }, (response) => {
+          if (chrome.runtime.lastError) {
+            alert("Extension not detected! Make sure it is installed.");
+          } else if (response && response.success) {
+            e.target.innerText = "Claimed";
+            e.target.disabled = true;
+          }
+        });
+      } else {
+        alert("Install the extension to claim themes!");
+      }
+    }
+  });
+
+  renderStore();
+</script>
 </body>
 </html>
