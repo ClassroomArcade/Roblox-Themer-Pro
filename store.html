@@ -1,47 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Theme Store</title>
+  <title>Theme Store | Roblox Studio Pro</title>
   <style>
-    body { font-family: sans-serif; background: #0b0e11; color: white; padding: 40px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-    .item { background: #15191e; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #333; }
-    .preview { height: 100px; border-radius: 8px; margin-bottom: 15px; }
-    .buy-btn { background: #0084ff; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; }
-    .buy-btn:disabled { background: #28a745; cursor: default; }
+    :root { --primary: #0084ff; --dark: #0b0e11; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: white; padding: 40px; margin: 0; overflow-x: hidden; transition: 0.5s ease; }
+    
+    /* The Background Preview Layer */
+    #bgPreview {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -2; opacity: 0.3; transition: 0.5s;
+      background-size: cover; background-position: center;
+    }
+
+    h1 { font-size: 32px; margin-bottom: 5px; }
+    p { color: #8899a6; margin-bottom: 30px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; position: relative; }
+    
+    .item { 
+      background: rgba(21, 25, 30, 0.8); 
+      padding: 20px; border-radius: 12px; text-align: center; 
+      border: 1px solid #333; transition: 0.3s; 
+      backdrop-filter: blur(5px);
+    }
+    .item:hover { transform: scale(1.05); border-color: var(--primary); box-shadow: 0 0 20px rgba(0, 132, 255, 0.2); }
+    
+    .preview-box { height: 100px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
+    
+    .buy-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+    .buy-btn:disabled { background: #28a745; cursor: default; opacity: 0.7; }
   </style>
 </head>
 <body>
+  <div id="bgPreview"></div>
+
   <h1>Theme Store</h1>
+  <p>Hover over a theme to preview it.</p>
+  
   <div class="grid" id="storeGrid"></div>
+
   <script>
     const themes = [
-      {id: 'cyberpunk', name: 'Cyberpunk Red', color: '#ff0055'},
-      {id: 'modern_dark', name: 'Black Glass', color: '#1a1a1a'},
-      {id: 'ocean', name: 'Oceanic', color: '#0077be'}
+      { id: 'cyberpunk', name: 'Cyberpunk Red', color: '#ff0055', bg: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81' },
+      { id: 'modern_dark', name: 'Black Glass', color: '#1a1a1a', bg: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa' },
+      { id: 'ocean', name: 'Oceanic Blue', color: '#0077be', bg: 'https://images.unsplash.com/photo-1505118380757-91f5f45d8de4' }
     ];
+
     chrome.storage.local.get(['ownedThemes'], (data) => {
       const owned = data.ownedThemes || ['cyberpunk'];
       const grid = document.getElementById('storeGrid');
+      const bgLayer = document.getElementById('bgPreview');
+
       themes.forEach(t => {
         const isOwned = owned.includes(t.id);
         const div = document.createElement('div');
         div.className = 'item';
         div.innerHTML = `
-          <div class="preview" style="background:${t.color}"></div>
+          <div class="preview-box" style="background:${t.color}"></div>
           <h3>${t.name}</h3>
-          <button class="buy-btn" data-id="${t.id}" ${isOwned ? 'disabled' : ''}>${isOwned ? 'Claimed' : 'FREE'}</button>
+          <button class="buy-btn" data-id="${t.id}" ${isOwned ? 'disabled' : ''}>
+            ${isOwned ? 'Claimed' : 'FREE'}
+          </button>
         `;
+
+        // HOVER PREVIEW LOGIC
+        div.addEventListener('mouseenter', () => {
+          bgLayer.style.backgroundImage = `url('${t.bg}')`;
+          bgLayer.style.opacity = "0.6";
+          document.body.style.backgroundColor = t.color;
+        });
+
+        div.addEventListener('mouseleave', () => {
+          bgLayer.style.opacity = "0.3";
+          document.body.style.backgroundColor = "#0b0e11";
+        });
+
         grid.appendChild(div);
       });
     });
+
+    // Handle Claims
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('buy-btn')) {
         const id = e.target.dataset.id;
         chrome.storage.local.get(['ownedThemes'], (data) => {
           const owned = data.ownedThemes || ['cyberpunk'];
-          if (!owned.includes(id)) owned.push(id);
-          chrome.storage.local.set({ownedThemes: owned}, () => { e.target.innerText = "Claimed"; e.target.disabled = true; });
+          if (!owned.includes(id)) {
+            owned.push(id);
+            chrome.storage.local.set({ownedThemes: owned}, () => {
+              e.target.innerText = "Claimed";
+              e.target.disabled = true;
+            });
+          }
         });
       }
     });
