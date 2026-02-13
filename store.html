@@ -1,165 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theme Store | Roblox Theme Studio Pro</title>
-    <style>
-        :root {
-            --primary: #0084ff;
-            --dark-bg: #0b0e11;
-            --card-bg: #15191e;
-            --text-main: #ffffff;
-            --text-dim: #8899a6;
-            --success: #28a745;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--dark-bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 50px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 { font-size: 2.5rem; margin-bottom: 10px; }
-        p { color: var(--text-dim); margin-bottom: 40px; }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-            max-width: 1200px;
-            width: 100%;
-        }
-
-        .item {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
-            text-align: center;
-            border: 1px solid #2f3336;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .item:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary);
-        }
-
-        .preview {
-            height: 150px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-        }
-
-        .buy-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: 0.2s;
-        }
-
-        .buy-btn:hover { filter: brightness(1.2); }
-        
-        .buy-btn:disabled {
-            background: var(--success);
-            cursor: default;
-            opacity: 0.8;
-        }
-
-        .status-msg {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: var(--primary);
-            display: none;
-        }
-    </style>
+  <title>Theme Store</title>
+  <style>
+    body { font-family: sans-serif; background: #0b0e11; color: white; padding: 40px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .item { background: #15191e; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #333; }
+    .preview { height: 100px; border-radius: 8px; margin-bottom: 15px; }
+    .buy-btn { background: #0084ff; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; }
+    .buy-btn:disabled { background: #28a745; cursor: default; }
+  </style>
 </head>
 <body>
-
-    <h1>Theme Store</h1>
-    <p>Get exclusive styles for your Roblox Home. All themes are currently 100% Free.</p>
-
-    <div class="grid" id="storeGrid">
-        </div>
-
-    <div class="status-msg" id="statusMsg">Theme added to your extension!</div>
-
-    <script>
-        // DEVELOPER: Add your new themes to this list
-        const themes = [
-            { id: 'cyberpunk', name: 'Cyberpunk Red', color: 'linear-gradient(45deg, #ff0055, #330011)', desc: 'Neon red glow with hacker fonts.' },
-            { id: 'vaporwave', name: 'Vaporwave', color: 'linear-gradient(45deg, #ff71ce, #01cdfe)', desc: '80s aesthetics and pink hues.' },
-            { id: 'ocean', name: 'Deep Sea Blue', color: 'linear-gradient(45deg, #0077be, #001a33)', desc: 'Calm, dark blue transparency.' },
-            { id: 'midnight', name: 'Midnight', color: 'linear-gradient(45deg, #000000, #1a1a1a)', desc: 'Pure dark mode for late night gaming.' }
-        ];
-
-        // Load themes and check what is already owned
-        function loadStore() {
-            chrome.storage.local.get(['ownedThemes'], (data) => {
-                const owned = data.ownedThemes || ['cyberpunk']; // Everyone starts with Cyberpunk
-                const grid = document.getElementById('storeGrid');
-                grid.innerHTML = ''; // Clear grid
-
-                themes.forEach(t => {
-                    const isOwned = owned.includes(t.id);
-                    const div = document.createElement('div');
-                    div.className = 'item';
-                    div.innerHTML = `
-                        <div class="preview" style="background:${t.color}">${t.name[0]}</div>
-                        <h3>${t.name}</h3>
-                        <p style="font-size: 0.9rem; margin-bottom: 20px;">${t.desc}</p>
-                        <button class="buy-btn" data-id="${t.id}" ${isOwned ? 'disabled' : ''}>
-                            ${isOwned ? '✓ Claimed' : 'Get for FREE'}
-                        </button>
-                    `;
-                    grid.appendChild(div);
-                });
-            });
-        }
-
-        // Handle "Buy" button clicks
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('buy-btn')) {
-                const themeId = e.target.dataset.id;
-                
-                chrome.storage.local.get(['ownedThemes'], (data) => {
-                    const owned = data.ownedThemes || ['cyberpunk'];
-                    
-                    if (!owned.includes(themeId)) {
-                        owned.push(themeId);
-                        chrome.storage.local.set({ ownedThemes: owned }, () => {
-                            e.target.innerText = "✓ Claimed";
-                            e.target.disabled = true;
-                            
-                            // Show success message
-                            const msg = document.getElementById('statusMsg');
-                            msg.style.display = 'block';
-                            setTimeout(() => { msg.style.display = 'none'; }, 3000);
-                        });
-                    }
-                });
-            }
+  <h1>Theme Store</h1>
+  <div class="grid" id="storeGrid"></div>
+  <script>
+    const themes = [
+      {id: 'cyberpunk', name: 'Cyberpunk Red', color: '#ff0055'},
+      {id: 'modern_dark', name: 'Black Glass', color: '#1a1a1a'},
+      {id: 'ocean', name: 'Oceanic', color: '#0077be'}
+    ];
+    chrome.storage.local.get(['ownedThemes'], (data) => {
+      const owned = data.ownedThemes || ['cyberpunk'];
+      const grid = document.getElementById('storeGrid');
+      themes.forEach(t => {
+        const isOwned = owned.includes(t.id);
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <div class="preview" style="background:${t.color}"></div>
+          <h3>${t.name}</h3>
+          <button class="buy-btn" data-id="${t.id}" ${isOwned ? 'disabled' : ''}>${isOwned ? 'Claimed' : 'FREE'}</button>
+        `;
+        grid.appendChild(div);
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('buy-btn')) {
+        const id = e.target.dataset.id;
+        chrome.storage.local.get(['ownedThemes'], (data) => {
+          const owned = data.ownedThemes || ['cyberpunk'];
+          if (!owned.includes(id)) owned.push(id);
+          chrome.storage.local.set({ownedThemes: owned}, () => { e.target.innerText = "Claimed"; e.target.disabled = true; });
         });
-
-        // Initialize store on load
-        loadStore();
-    </script>
+      }
+    });
+  </script>
 </body>
 </html>
