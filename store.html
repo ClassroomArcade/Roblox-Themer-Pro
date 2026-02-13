@@ -48,13 +48,14 @@
       { id: 'ocean', name: 'Oceanic Blue', color: '#0077be', bg: 'https://images.unsplash.com/photo-1505118380757-91f5f45d8de4' }
     ];
 
-    chrome.storage.local.get(['ownedThemes'], (data) => {
-      const owned = data.ownedThemes || ['cyberpunk'];
+    // Helper to render themes
+    function renderStore(ownedList) {
       const grid = document.getElementById('storeGrid');
       const bgLayer = document.getElementById('bgPreview');
+      grid.innerHTML = ''; // Clear previous content
 
       themes.forEach(t => {
-        const isOwned = owned.includes(t.id);
+        const isOwned = ownedList.includes(t.id);
         const div = document.createElement('div');
         div.className = 'item';
         div.innerHTML = `
@@ -65,7 +66,6 @@
           </button>
         `;
 
-        // HOVER PREVIEW LOGIC
         div.addEventListener('mouseenter', () => {
           bgLayer.style.backgroundImage = `url('${t.bg}')`;
           bgLayer.style.opacity = "0.6";
@@ -79,22 +79,38 @@
 
         grid.appendChild(div);
       });
-    });
+    }
+
+    // Check for Extension Storage
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.get(['ownedThemes'], (data) => {
+        renderStore(data.ownedThemes || ['cyberpunk']);
+      });
+    } else {
+      // If viewing on Netlify directly, just show all themes as available
+      renderStore(['cyberpunk']);
+      console.log("Running in Web Mode: Storage Unavailable");
+    }
 
     // Handle Claims
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('buy-btn')) {
         const id = e.target.dataset.id;
-        chrome.storage.local.get(['ownedThemes'], (data) => {
-          const owned = data.ownedThemes || ['cyberpunk'];
-          if (!owned.includes(id)) {
-            owned.push(id);
-            chrome.storage.local.set({ownedThemes: owned}, () => {
-              e.target.innerText = "Claimed";
-              e.target.disabled = true;
-            });
-          }
-        });
+        
+        if (typeof chrome !== "undefined" && chrome.storage) {
+          chrome.storage.local.get(['ownedThemes'], (data) => {
+            const owned = data.ownedThemes || ['cyberpunk'];
+            if (!owned.includes(id)) {
+              owned.push(id);
+              chrome.storage.local.set({ownedThemes: owned}, () => {
+                e.target.innerText = "Claimed";
+                e.target.disabled = true;
+              });
+            }
+          });
+        } else {
+          alert("Install the extension to 'buy' this theme!");
+        }
       }
     });
   </script>
